@@ -1,11 +1,13 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import reportWebVitals from './reportWebVitals';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import "./index.css";
+import reportWebVitals from "./reportWebVitals";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import Home from './components/Home';
-import Login from './components/Login';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import Home from "./components/Home";
+import Login from "./components/Login";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Privacy from "./components/Privacy";
+import PrivacyAr from "./components/PrivacyAr";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 const queryClient = new QueryClient();
@@ -15,19 +17,25 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
-  path: "/home",
-  element: <Home/>
-  }
+    path: "/home",
+    element: <Home />,
+  },
+  {
+    path: "/privacy",
+    element: <Privacy />,
+  },
+  {
+    path: "/privacy/ar",
+    element: <PrivacyAr />,
+  },
 ]);
-
-
 
 root.render(
   <React.StrictMode>
-  <QueryClientProvider client={queryClient}>
-    <RouterProvider router={router} />
-  </QueryClientProvider>
-</React.StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>
+  </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function
