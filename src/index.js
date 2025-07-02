@@ -8,6 +8,7 @@ import Login from "./components/Login";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Privacy from "./components/Privacy";
 import PrivacyAr from "./components/PrivacyAr";
+import Support from "./components/support";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 const queryClient = new QueryClient();
@@ -27,6 +28,10 @@ const router = createBrowserRouter([
   {
     path: "/privacy/ar",
     element: <PrivacyAr />,
+  },
+  {
+    path: "/support",
+    element: <Support />,
   },
 ]);
 

@@ -8,6 +8,7 @@ import Home from "./components/Home";
 import ChangePassword from "./components/ChangePassword";
 import Privacy from "./components/Privacy";
 import PrivacyAr from "./components/PrivacyAr";
+import Support from "./components/support";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,6 +30,7 @@ function App() {
             <Route path="/change-password" element={<ChangePassword />} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/privacy/ar" element={<PrivacyAr />} />
+            <Route path="/support" element={<Support />} />
             {/* <Route path="/" element={<Navigate to="/login" replace />} /> */}
           </Routes>
         </BrowserRouter>
