@@ -1,8 +1,9 @@
 import axios from "axios";
+import { BASE_URL } from "./constants";
 
 const api = axios.create({
-  // baseURL: 'http://localhost:8000/',
-  baseURL: "https://logbook-backend.onrender.com/", // Changed from 8081 to 8000 to match your backend
+  baseURL: BASE_URL,
+  // baseURL: "https://logbook-backend.onrender.com/", // Changed from 8081 to 8000 to match your backend
 });
 
 // Add a request interceptor to include token
