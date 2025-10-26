@@ -1,35 +1,36 @@
-import axios from 'axios';
+import axios from "axios";
+import { BASE_URL } from "./constants";
 
 const api = axios.create({
-    baseURL: 'http://localhost:8000/',
-    
+  baseURL: BASE_URL,
+  // baseURL: "https://logbook-backend.onrender.com/", // Changed from 8081 to 8000 to match your backend
 });
 
 // Add a request interceptor to include token
 api.interceptors.request.use(
-    (config) => {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
 // Add response interceptor
 api.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response?.status === 401) {
-            // Clear token and redirect to login
-            localStorage.removeItem('token');
-            // window.location.href = '/';
-        }
-        return Promise.reject(error);
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Clear token and redirect to login
+      localStorage.removeItem("token");
+      // window.location.href = '/';
     }
+    return Promise.reject(error);
+  }
 );
 
-export default api; 
+export default api;
