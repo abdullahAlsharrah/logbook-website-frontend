@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Row,
@@ -8,6 +8,7 @@ import {
   Form,
   Dropdown,
   InputGroup,
+  Badge,
 } from "react-bootstrap";
 import {
   Plus,
@@ -20,8 +21,10 @@ import {
   Copy,
   Archive,
   Settings,
+  Building2,
 } from "lucide-react";
 import { useForms, useDeleteForm } from "../hooks/useForms";
+import { useInstitution } from "../context/InstitutionContext";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import "./Forms.css";
 
@@ -29,7 +32,19 @@ const Forms = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const { data: forms, isLoading } = useForms();
+  // Institution context
+  const { selectedInstitution } = useInstitution();
+
+  // Build params with institutionId if selected
+  const queryParams = useMemo(() => {
+    const params = {};
+    if (selectedInstitution) {
+      params.institutionId = selectedInstitution;
+    }
+    return params;
+  }, [selectedInstitution]);
+
+  const { data: forms, isLoading } = useForms(queryParams);
   const deleteFormMutation = useDeleteForm();
 
   const handleCreateForm = () => {
@@ -142,6 +157,17 @@ const Forms = () => {
                     }}>
                     {form?.formName}
                   </h5>
+
+                  {/* Institution Badge */}
+                  {form?.institution && (
+                    <Badge
+                      bg="info"
+                      className="mb-2 d-inline-flex align-items-center gap-1">
+                      <Building2 size={12} />
+                      {form.institution.name}
+                    </Badge>
+                  )}
+
                   <p className="form-description">{form?.scaleDescription}</p>
 
                   <div className="form-stats">

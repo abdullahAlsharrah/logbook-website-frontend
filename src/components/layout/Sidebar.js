@@ -2,13 +2,14 @@ import React, { useState } from "react";
 import { Nav, Offcanvas } from "react-bootstrap";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  House,
+  // House,
   User,
   FileText,
   Megaphone,
   BarChart3,
   Settings,
   Menu,
+  Building2,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import "./Sidebar.css";
@@ -35,7 +36,8 @@ const Sidebar = () => {
   }
 
   const menuItems = [
-    { path: "/dashboard", icon: House, label: "Dashboard" },
+    // { path: "/dashboard", icon: House, label: "Dashboard" },
+    { path: "/institutions", icon: Building2, label: "Institutions" },
     { path: "/users", icon: User, label: "Users" },
     { path: "/forms", icon: FileText, label: "Forms" },
     { path: "/submissions", icon: FileText, label: "Submissions" },

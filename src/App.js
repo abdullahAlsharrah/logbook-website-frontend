@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./context/AuthContext";
+import { InstitutionProvider } from "./context/InstitutionContext";
 import Login from "./components/Login";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
@@ -12,6 +13,9 @@ import ViewSubmission from "./pages/ViewSubmission";
 import Submissions from "./pages/Submissions";
 import UserDetail from "./pages/UserDetail";
 import Announcements from "./pages/Announcements";
+import Institutions from "./pages/Institutions";
+import InstitutionForm from "./pages/InstitutionForm";
+import InstitutionDetail from "./pages/InstitutionDetail";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
@@ -140,6 +144,40 @@ const AppRoutes = () => {
           }
         />
 
+        {/* Institution Management Routes */}
+        <Route
+          path="/institutions"
+          element={
+            <ProtectedRoute>
+              <Institutions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/institutions/create"
+          element={
+            <ProtectedRoute>
+              <InstitutionForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/institutions/edit/:institutionId"
+          element={
+            <ProtectedRoute>
+              <InstitutionForm />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/institutions/:institutionId"
+          element={
+            <ProtectedRoute>
+              <InstitutionDetail />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Analytics and Settings routes (placeholder) */}
         <Route
           path="/analytics"
@@ -189,7 +227,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <AppRoutes />
+          <InstitutionProvider>
+            <AppRoutes />
+          </InstitutionProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

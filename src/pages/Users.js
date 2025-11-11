@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Row,
@@ -12,7 +12,15 @@ import {
   Dropdown,
   InputGroup,
 } from "react-bootstrap";
-import { Plus, Search, Edit, Trash2, Eye, MoreVertical } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Eye,
+  MoreVertical,
+  Building2,
+} from "lucide-react";
 import {
   useUsers,
   useCreateUser,
@@ -20,6 +28,7 @@ import {
   useDeleteUser,
   useTutorList,
 } from "../hooks/useUsers";
+import { useInstitution } from "../context/InstitutionContext";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import "./Users.css";
 import { BASE_URL } from "../api/constants";
@@ -30,8 +39,21 @@ const Users = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [localInstitutionFilter, setLocalInstitutionFilter] = useState("");
 
-  const { data: users, isLoading } = useUsers();
+  // Institution context
+  const { selectedInstitution, institutions } = useInstitution();
+
+  // Build params with institutionId if selected
+  const queryParams = useMemo(() => {
+    const params = {};
+    if (selectedInstitution) {
+      params.institutionId = selectedInstitution;
+    }
+    return params;
+  }, [selectedInstitution]);
+
+  const { data: users, isLoading } = useUsers(queryParams);
   const { data: tutorList, isLoading: tutorListLoading } = useTutorList();
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
@@ -43,6 +65,7 @@ const Users = () => {
     roles: [],
     status: "active",
     supervisor: "",
+    institutionId: "", // NEW: Institution selection
     image: "",
     imagePreview: null,
   });
@@ -56,6 +79,7 @@ const Users = () => {
         roles: user.roles || [],
         status: user.status,
         supervisor: user.supervisor?._id || "",
+        institutionId: user.institutions?.[0]?._id || "",
         image: user.image || "",
         imagePreview: null,
       });
@@ -67,6 +91,7 @@ const Users = () => {
         roles: [],
         status: "active",
         supervisor: "",
+        institutionId: selectedInstitution || "", // Default to selected institution
         image: "",
         imagePreview: null,
       });
@@ -87,6 +112,7 @@ const Users = () => {
       roles: [],
       status: "active",
       supervisor: "",
+      institutionId: "",
       image: "",
       imagePreview: null,
     });
@@ -132,10 +158,12 @@ const Users = () => {
       const matchesSearch =
         user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRole = !roleFilter || user?.roles?.includes(roleFilter); // Check if user has the role
-      // const matchesStatus = !statusFilter || user?.status === statusFilter;
+      const matchesRole = !roleFilter || user?.roles?.includes(roleFilter);
+      const matchesInstitution =
+        !localInstitutionFilter ||
+        user?.institutions?.some((inst) => inst._id === localInstitutionFilter);
 
-      return matchesSearch && matchesRole;
+      return matchesSearch && matchesRole && matchesInstitution;
     }) || [];
 
   const getRoleBadge = (roles) => {
@@ -199,7 +227,7 @@ const Users = () => {
                   />
                 </InputGroup>
               </Col>
-              <Col md={3}>
+              <Col md={2}>
                 <Form.Select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}>
@@ -209,25 +237,28 @@ const Users = () => {
                   <option value="resident">Resident</option>
                 </Form.Select>
               </Col>
-              {/* <Col md={3}>
+              <Col md={3}>
                 <Form.Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}>
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="suspended">Suspended</option>
-                  <option value="pending">Pending</option>
+                  value={localInstitutionFilter}
+                  onChange={(e) => setLocalInstitutionFilter(e.target.value)}>
+                  <option value="">All Institutions</option>
+                  {institutions?.map((inst) => (
+                    <option key={inst._id} value={inst._id}>
+                      {inst.name}
+                    </option>
+                  ))}
                 </Form.Select>
-              </Col> */}
-              <Col md={2}>
+              </Col>
+              <Col md={3}>
                 <Button
                   variant="outline-secondary"
+                  className="w-100"
                   onClick={() => {
                     setSearchTerm("");
                     setRoleFilter("");
+                    setLocalInstitutionFilter("");
                   }}>
-                  Clear
+                  Clear Filters
                 </Button>
               </Col>
             </Row>
@@ -254,6 +285,7 @@ const Users = () => {
                   <th>User</th>
                   <th>Email</th>
                   <th>Role</th>
+                  <th>Institution</th>
                   <th>Submissions</th>
                   <th>Supervisor</th>
                   <th>Actions</th>
@@ -295,6 +327,23 @@ const Users = () => {
                     </td>
                     <td>{user.email}</td>
                     <td>{getRoleBadge(user?.roles)}</td>
+                    <td>
+                      {user.institutions && user.institutions.length > 0 ? (
+                        <div className="d-flex flex-wrap gap-1">
+                          {user.institutions.map((inst) => (
+                            <Badge
+                              key={inst._id}
+                              bg="info"
+                              className="d-flex align-items-center gap-1">
+                              <Building2 size={12} />
+                              {inst.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
+                    </td>
                     <td style={{ textAlign: "center" }}>
                       {user.totalSubmissions || 0}
                     </td>
@@ -405,6 +454,34 @@ const Users = () => {
                   </Form.Group>
                 </Col>
               </Row>
+
+              {/* Institution Selection */}
+              <Row>
+                <Col md={12}>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Institution</Form.Label>
+                    <Form.Select
+                      value={formData.institutionId}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          institutionId: e.target.value,
+                        })
+                      }>
+                      <option value="">Default (Your First Institution)</option>
+                      {institutions?.map((inst) => (
+                        <option key={inst._id} value={inst._id}>
+                          {inst.name}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    <Form.Text className="text-muted">
+                      Select which institution this user belongs to
+                    </Form.Text>
+                  </Form.Group>
+                </Col>
+              </Row>
+
               <Row>
                 {formData.roles.includes("resident") && (
                   <Col md={6}>
