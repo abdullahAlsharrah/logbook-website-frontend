@@ -20,6 +20,9 @@ const FormEdit = () => {
     score: "",
     scaleDescription: "",
     fieldTemplates: [],
+    levelRestricted: false,
+    minLevel: "",
+    maxLevel: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -27,11 +30,52 @@ const FormEdit = () => {
   // Load form data when editing
   useEffect(() => {
     if (form && isEditing) {
+      // Convert old options format to new optionsWithLevels format
+      const convertedFieldTemplates = (form.fieldTemplates || []).map(
+        (field) => {
+          // If field has old options array but no optionsWithLevels, convert it
+          if (
+            field.type === "select" &&
+            field.options &&
+            !field.optionsWithLevels
+          ) {
+            return {
+              ...field,
+              optionsWithLevels: field.options.map((opt) => ({
+                value: opt,
+                label: opt,
+                minLevel: "",
+              })),
+            };
+          }
+          // If field has optionsWithLevels but it's empty and has old options, convert
+          if (
+            field.type === "select" &&
+            field.options &&
+            field.optionsWithLevels &&
+            field.optionsWithLevels.length === 0
+          ) {
+            return {
+              ...field,
+              optionsWithLevels: field.options.map((opt) => ({
+                value: opt,
+                label: opt,
+                minLevel: "",
+              })),
+            };
+          }
+          return field;
+        }
+      );
+
       setFormData({
         formName: form.formName || "",
         score: form.score || "",
         scaleDescription: form.scaleDescription || "",
-        fieldTemplates: form.fieldTemplates || [],
+        fieldTemplates: convertedFieldTemplates,
+        levelRestricted: form.levelRestricted || false,
+        minLevel: form.minLevel || "",
+        maxLevel: form.maxLevel || "",
       });
     }
   }, [form, isEditing]);
@@ -84,7 +128,7 @@ const FormEdit = () => {
       position: "left",
       response: "resident",
       section: "1",
-      options: [],
+      optionsWithLevels: [], // Default for select fields
     };
 
     setFormData({
@@ -231,6 +275,93 @@ const FormEdit = () => {
                   {errors.scaleDescription}
                 </Form.Control.Feedback>
               </Form.Group>
+            </Card.Body>
+          </Card>
+
+          {/* Level Restrictions */}
+          <Card className="mb-4">
+            <Card.Header>
+              <h5>Resident Level Restrictions</h5>
+            </Card.Header>
+            <Card.Body>
+              <Form.Group className="mb-3">
+                <Form.Check
+                  type="checkbox"
+                  id="levelRestricted"
+                  label="Enable Level Restrictions"
+                  checked={formData.levelRestricted}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      levelRestricted: e.target.checked,
+                    })
+                  }
+                />
+                <Form.Text className="text-muted">
+                  Restrict this form to specific resident levels
+                </Form.Text>
+              </Form.Group>
+
+              {formData.levelRestricted && (
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Minimum Level</Form.Label>
+                      <Form.Select
+                        value={formData.minLevel}
+                        onChange={(e) =>
+                          setFormData({ ...formData, minLevel: e.target.value })
+                        }>
+                        <option value="">No Minimum</option>
+                        <option value="R1">R1 - First Year</option>
+                        <option value="R2">R2 - Second Year</option>
+                        <option value="R3">R3 - Third Year</option>
+                        <option value="R4">R4 - Fourth Year</option>
+                        <option value="R5">R5 - Fifth Year</option>
+                      </Form.Select>
+                      <Form.Text className="text-muted">
+                        Residents below this level won't see this form
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Maximum Level (Optional)</Form.Label>
+                      <Form.Select
+                        value={formData.maxLevel}
+                        onChange={(e) =>
+                          setFormData({ ...formData, maxLevel: e.target.value })
+                        }>
+                        <option value="">No Maximum</option>
+                        <option value="R1">R1 - First Year</option>
+                        <option value="R2">R2 - Second Year</option>
+                        <option value="R3">R3 - Third Year</option>
+                        <option value="R4">R4 - Fourth Year</option>
+                        <option value="R5">R5 - Fifth Year</option>
+                      </Form.Select>
+                      <Form.Text className="text-muted">
+                        Optional upper limit for form access
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                </Row>
+              )}
+
+              {formData.levelRestricted && (
+                <Alert variant="info" className="mt-3">
+                  <strong>Access:</strong>{" "}
+                  {!formData.minLevel && !formData.maxLevel && "All residents"}
+                  {formData.minLevel &&
+                    !formData.maxLevel &&
+                    `Residents ${formData.minLevel} and above`}
+                  {formData.minLevel &&
+                    formData.maxLevel &&
+                    `Residents from ${formData.minLevel} to ${formData.maxLevel}`}
+                  {!formData.minLevel &&
+                    formData.maxLevel &&
+                    `Residents up to ${formData.maxLevel}`}
+                </Alert>
+              )}
             </Card.Body>
           </Card>
 
@@ -440,34 +571,29 @@ const FieldTemplateCard = ({ field, index, onUpdate, onRemove }) => {
               </Form.Group>
             )}
 
-            {(field.type === "select" || field.type === "scale") && (
+            {field.type === "select" && (
+              <OptionsWithLevelsEditor
+                options={field.optionsWithLevels || []}
+                onChange={(newOptions) =>
+                  handleFieldChange("optionsWithLevels", newOptions)
+                }
+              />
+            )}
+
+            {field.type === "scale" && (
               <Form.Group className="mb-3">
-                <Form.Label>
-                  {field.type === "select" ? "Options" : "Scale Options"}
-                </Form.Label>
+                <Form.Label>Scale Options</Form.Label>
                 <Form.Control
                   as="textarea"
                   rows={3}
-                  value={
-                    field.type === "select"
-                      ? field.options?.join("\n") || ""
-                      : field.scaleOptions?.join("\n") || ""
-                  }
+                  value={field.scaleOptions?.join("\n") || ""}
                   onChange={(e) => {
                     const options = e.target.value
                       .split("\n")
                       .filter((opt) => opt.trim());
-                    if (field.type === "select") {
-                      handleFieldChange("options", options);
-                    } else {
-                      handleFieldChange("scaleOptions", options);
-                    }
+                    handleFieldChange("scaleOptions", options);
                   }}
-                  placeholder={
-                    field.type === "select"
-                      ? "Enter options (one per line)"
-                      : "Enter scale options (one per line)"
-                  }
+                  placeholder="Enter scale options (one per line)"
                 />
               </Form.Group>
             )}
@@ -475,6 +601,132 @@ const FieldTemplateCard = ({ field, index, onUpdate, onRemove }) => {
         )}
       </Card.Body>
     </Card>
+  );
+};
+
+// Options with Levels Editor Component
+const OptionsWithLevelsEditor = ({ options, onChange }) => {
+  const addOption = () => {
+    const newOption = { value: "", label: "", minLevel: "" };
+    onChange([...options, newOption]);
+  };
+
+  const updateOption = (index, field, value) => {
+    const newOptions = [...options];
+    newOptions[index] = { ...newOptions[index], [field]: value };
+    onChange(newOptions);
+  };
+
+  const removeOption = (index) => {
+    const newOptions = options.filter((_, i) => i !== index);
+    onChange(newOptions);
+  };
+
+  return (
+    <div className="options-with-levels-editor mb-3">
+      <div className="d-flex justify-content-between align-items-center mb-2">
+        <Form.Label className="mb-0">Select Options</Form.Label>
+        <Button variant="outline-primary" size="sm" onClick={addOption}>
+          <Plus size={14} className="me-1" />
+          Add Option
+        </Button>
+      </div>
+
+      {options.length === 0 ? (
+        <Alert variant="info" className="mb-0">
+          No options added yet. Click "Add Option" to start.
+        </Alert>
+      ) : (
+        <div className="options-list">
+          {options.map((option, index) => (
+            <Card key={index} className="option-card mb-2">
+              <Card.Body className="p-3">
+                <Row className="align-items-center">
+                  <Col md={4}>
+                    <Form.Group className="mb-2 mb-md-0">
+                      <Form.Label className="small">Value *</Form.Label>
+                      <Form.Control
+                        size="sm"
+                        type="text"
+                        placeholder="Option value"
+                        value={option.value}
+                        onChange={(e) =>
+                          updateOption(index, "value", e.target.value)
+                        }
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={3}>
+                    <Form.Group className="mb-2 mb-md-0">
+                      <Form.Label className="small">Label</Form.Label>
+                      <Form.Control
+                        size="sm"
+                        type="text"
+                        placeholder="Display label (optional)"
+                        value={option.label}
+                        onChange={(e) =>
+                          updateOption(index, "label", e.target.value)
+                        }
+                      />
+                      <Form.Text
+                        className="text-muted"
+                        style={{ fontSize: "0.7rem" }}>
+                        Leave empty to use value
+                      </Form.Text>
+                    </Form.Group>
+                  </Col>
+                  <Col md={3}>
+                    <Form.Group className="mb-2 mb-md-0">
+                      <Form.Label className="small">
+                        Min Level (Optional)
+                      </Form.Label>
+                      <Form.Select
+                        size="sm"
+                        value={option.minLevel || ""}
+                        onChange={(e) =>
+                          updateOption(index, "minLevel", e.target.value)
+                        }>
+                        <option value="">All Levels</option>
+                        <option value="R1">R1+</option>
+                        <option value="R2">R2+</option>
+                        <option value="R3">R3+</option>
+                        <option value="R4">R4+</option>
+                        <option value="R5">R5+</option>
+                      </Form.Select>
+                    </Form.Group>
+                  </Col>
+                  <Col md={2} className="text-end">
+                    <Button
+                      variant="outline-danger"
+                      size="sm"
+                      onClick={() => removeOption(index)}
+                      className="mt-md-4">
+                      <Trash2 size={14} />
+                    </Button>
+                  </Col>
+                </Row>
+                {option.minLevel && (
+                  <Row className="mt-2">
+                    <Col>
+                      <Alert variant="warning" className="py-1 px-2 mb-0 small">
+                        <strong>Restricted:</strong> Only residents{" "}
+                        {option.minLevel} and above can select this option
+                      </Alert>
+                    </Col>
+                  </Row>
+                )}
+              </Card.Body>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Form.Text className="text-muted">
+        💡 Tip: Leave "Min Level" as "All Levels" for options available to all
+        residents. Set a minimum level to restrict advanced options to senior
+        residents.
+      </Form.Text>
+    </div>
   );
 };
 

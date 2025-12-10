@@ -395,7 +395,9 @@ const InstitutionDetail = () => {
                 <option value="">Choose a user...</option>
                 {availableUsers.map((user) => (
                   <option key={user._id} value={user._id}>
-                    {user.username} ({user.email}) - {user.roles?.join(", ")}
+                    {user.username} ({user.email}) -{" "}
+                    {user.institutionRoles?.map((ir) => ir.role).join(", ") ||
+                      "No roles"}
                   </option>
                 ))}
               </Form.Select>

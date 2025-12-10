@@ -3,10 +3,11 @@ import * as userApi from "../api/users";
 import * as formApi from "../api/forms";
 import { useAuth } from "../context/AuthContext";
 
-export const useUsers = (params = {}) => {
+export const useUsers = (institutionId, params = {}) => {
   return useQuery({
-    queryKey: ["users", params],
-    queryFn: () => userApi.getUsers(params),
+    queryKey: ["users", institutionId, params],
+    queryFn: () => userApi.getUsers(institutionId, params),
+    enabled: !!institutionId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
@@ -98,10 +99,24 @@ export const useUpdateUserStatus = () => {
   });
 };
 
-export const useTutorList = () => {
+export const useTutorList = (institutionId) => {
   return useQuery({
-    queryKey: ["tutorList"],
-    queryFn: userApi.getTutorList,
+    queryKey: ["tutorList", institutionId],
+    queryFn: () => userApi.getTutorList(institutionId),
+    enabled: !!institutionId,
     staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+};
+
+export const useUpdateUserLevel = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ userId, levelData }) =>
+      userApi.updateUserLevel(userId, levelData),
+    onSuccess: (data, { userId }) => {
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["user", userId] });
+    },
   });
 };

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./context/AuthContext";
 import { InstitutionProvider } from "./context/InstitutionContext";
 import Login from "./components/Login";
+import InstitutionSelector from "./pages/InstitutionSelector";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import Forms from "./pages/Forms";
@@ -54,99 +55,119 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Protected Routes */}
+        {/* Institution Selection (No Sidebar) */}
         <Route
-          path="/dashboard"
+          path="/select-institution"
           element={
             <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/users"
-          element={
-            <ProtectedRoute>
-              <Users />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/users/:userId"
-          element={
-            <ProtectedRoute>
-              <UserDetail />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/forms"
-          element={
-            <ProtectedRoute>
-              <Forms />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/forms/create"
-          element={
-            <ProtectedRoute>
-              <FormEdit />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/forms/edit/:formId"
-          element={
-            <ProtectedRoute>
-              <FormEdit />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/forms/view/:formId"
-          element={
-            <ProtectedRoute>
-              <FormView />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/submissions"
-          element={
-            <ProtectedRoute>
-              <Submissions />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/submissions/view/:submissionId"
-          element={
-            <ProtectedRoute>
-              <ViewSubmission />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/submissions/pdf/:submissionId"
-          element={
-            <ProtectedRoute>
-              <ViewSubmission />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/announcements"
-          element={
-            <ProtectedRoute>
-              <Announcements />
+              <InstitutionSelector />
             </ProtectedRoute>
           }
         />
 
-        {/* Institution Management Routes */}
+        {/* All routes nested under institution */}
+        <Route path="/institution/:institutionId">
+          <Route
+            path="dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users"
+            element={
+              <ProtectedRoute>
+                <Users />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="users/:userId"
+            element={
+              <ProtectedRoute>
+                <UserDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="forms"
+            element={
+              <ProtectedRoute>
+                <Forms />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="forms/create"
+            element={
+              <ProtectedRoute>
+                <FormEdit />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="forms/edit/:formId"
+            element={
+              <ProtectedRoute>
+                <FormEdit />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="forms/view/:formId"
+            element={
+              <ProtectedRoute>
+                <FormView />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="submissions"
+            element={
+              <ProtectedRoute>
+                <Submissions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="submissions/view/:submissionId"
+            element={
+              <ProtectedRoute>
+                <ViewSubmission />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="submissions/pdf/:submissionId"
+            element={
+              <ProtectedRoute>
+                <ViewSubmission />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="announcements"
+            element={
+              <ProtectedRoute>
+                <Announcements />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="settings"
+            element={
+              <ProtectedRoute>
+                <InstitutionDetail />
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* Global Institution Management (with sidebar) */}
         <Route
-          path="/institutions"
+          path="/institutions/manage"
           element={
             <ProtectedRoute>
               <Institutions />
@@ -169,54 +190,16 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/institutions/:institutionId"
-          element={
-            <ProtectedRoute>
-              <InstitutionDetail />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Analytics and Settings routes (placeholder) */}
-        <Route
-          path="/analytics"
-          element={
-            <ProtectedRoute>
-              <div className="dashboard-layout">
-                <div className="dashboard-main">
-                  <div className="dashboard-content">
-                    <div className="container-fluid">
-                      <h2>Analytics</h2>
-                      <p>Analytics page coming soon...</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <ProtectedRoute>
-              <div className="dashboard-layout">
-                <div className="dashboard-main">
-                  <div className="dashboard-content">
-                    <div className="container-fluid">
-                      <h2>Settings</h2>
-                      <p>Settings page coming soon...</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </ProtectedRoute>
-          }
-        />
 
         {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        <Route
+          path="/"
+          element={<Navigate to="/select-institution" replace />}
+        />
+        <Route
+          path="*"
+          element={<Navigate to="/select-institution" replace />}
+        />
       </Routes>
     </div>
   );

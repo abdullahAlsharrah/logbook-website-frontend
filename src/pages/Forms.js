@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useForms, useDeleteForm } from "../hooks/useForms";
 import { useInstitution } from "../context/InstitutionContext";
+import LevelBadge from "../components/LevelBadge";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import "./Forms.css";
 
@@ -159,14 +160,23 @@ const Forms = () => {
                   </h5>
 
                   {/* Institution Badge */}
-                  {form?.institution && (
-                    <Badge
-                      bg="info"
-                      className="mb-2 d-inline-flex align-items-center gap-1">
-                      <Building2 size={12} />
-                      {form.institution.name}
-                    </Badge>
-                  )}
+                  <div className="mb-2">
+                    {form?.institution && (
+                      <Badge
+                        bg="info"
+                        className="me-1 d-inline-flex align-items-center gap-1">
+                        <Building2 size={12} />
+                        {form.institution.name}
+                      </Badge>
+                    )}
+                    {form?.levelRestricted && form?.minLevel && (
+                      <Badge
+                        bg="warning"
+                        className="d-inline-flex align-items-center gap-1">
+                        Level: {form.minLevel}+
+                      </Badge>
+                    )}
+                  </div>
 
                   <p className="form-description">{form?.scaleDescription}</p>
 
