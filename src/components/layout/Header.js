@@ -3,6 +3,7 @@ import { Container, Row, Col, Badge, Dropdown } from "react-bootstrap";
 import { Bell, User, Settings, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import InstitutionSelector from "../InstitutionSelector";
 import "./Header.css";
 
 const Header = () => {
@@ -25,6 +26,11 @@ const Header = () => {
               </div>
 
               <div className="header-right">
+                {/* Institution Selector */}
+                <div className="header-item">
+                  <InstitutionSelector />
+                </div>
+
                 {/* Notifications */}
                 <div className="header-item">
                   <button className="btn btn-link position-relative">

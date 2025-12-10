@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useMemo } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   Row,
   Col,
@@ -12,7 +12,15 @@ import {
   Dropdown,
   InputGroup,
 } from "react-bootstrap";
-import { Plus, Search, Edit, Trash2, Eye, MoreVertical } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Edit,
+  Trash2,
+  Eye,
+  MoreVertical,
+  TrendingUp,
+} from "lucide-react";
 import {
   useUsers,
   useCreateUser,
@@ -21,18 +29,25 @@ import {
   useTutorList,
 } from "../hooks/useUsers";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import ManageLevelsModal from "../components/ManageLevelsModal";
+import LevelBadge from "../components/LevelBadge";
 import "./Users.css";
 import { BASE_URL } from "../api/constants";
 
 const Users = () => {
   const navigate = useNavigate();
+  const { institutionId } = useParams();
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [showLevelsModal, setShowLevelsModal] = useState(false);
+  const [selectedUserForLevels, setSelectedUserForLevels] = useState(null);
 
-  const { data: users, isLoading } = useUsers();
-  const { data: tutorList, isLoading: tutorListLoading } = useTutorList();
+  // Fetch users for this institution
+  const { data: users, isLoading } = useUsers(institutionId);
+  const { data: tutorList, isLoading: tutorListLoading } =
+    useTutorList(institutionId);
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
   const deleteUserMutation = useDeleteUser();
@@ -43,6 +58,7 @@ const Users = () => {
     roles: [],
     status: "active",
     supervisor: "",
+    institutionId: "", // NEW: Institution selection
     image: "",
     imagePreview: null,
   });
@@ -56,6 +72,7 @@ const Users = () => {
         roles: user.roles || [],
         status: user.status,
         supervisor: user.supervisor?._id || "",
+        institutionId: institutionId,
         image: user.image || "",
         imagePreview: null,
       });
@@ -67,6 +84,7 @@ const Users = () => {
         roles: [],
         status: "active",
         supervisor: "",
+        institutionId: institutionId,
         image: "",
         imagePreview: null,
       });
@@ -87,6 +105,7 @@ const Users = () => {
       roles: [],
       status: "active",
       supervisor: "",
+      institutionId: "",
       image: "",
       imagePreview: null,
     });
@@ -124,7 +143,17 @@ const Users = () => {
   };
 
   const handleViewDetails = (user) => {
-    navigate(`/users/${user._id}`);
+    navigate(`/institution/${institutionId}/users/${user._id}`);
+  };
+
+  const handleManageLevels = (user) => {
+    setSelectedUserForLevels(user);
+    setShowLevelsModal(true);
+  };
+
+  const handleCloseLevelsModal = () => {
+    setShowLevelsModal(false);
+    setSelectedUserForLevels(null);
   };
 
   const filteredUsers =
@@ -132,24 +161,18 @@ const Users = () => {
       const matchesSearch =
         user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesRole = !roleFilter || user?.roles?.includes(roleFilter); // Check if user has the role
-      // const matchesStatus = !statusFilter || user?.status === statusFilter;
+      const matchesRole = !roleFilter || user?.role === roleFilter;
 
       return matchesSearch && matchesRole;
     }) || [];
 
-  const getRoleBadge = (roles) => {
+  const getRoleBadge = (role) => {
     const variants = {
       admin: "danger",
       tutor: "warning",
       resident: "primary",
-      "tutor-admin": "danger",
     };
-    return (
-      <Badge bg={variants[roles.join("-")] || "secondary"}>
-        {roles.join(", ")}
-      </Badge>
-    );
+    return <Badge bg={variants[role] || "secondary"}>{role}</Badge>;
   };
 
   if (isLoading) {
@@ -199,7 +222,7 @@ const Users = () => {
                   />
                 </InputGroup>
               </Col>
-              <Col md={3}>
+              <Col md={4}>
                 <Form.Select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}>
@@ -209,25 +232,15 @@ const Users = () => {
                   <option value="resident">Resident</option>
                 </Form.Select>
               </Col>
-              {/* <Col md={3}>
-                <Form.Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}>
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="suspended">Suspended</option>
-                  <option value="pending">Pending</option>
-                </Form.Select>
-              </Col> */}
-              <Col md={2}>
+              <Col md={4}>
                 <Button
                   variant="outline-secondary"
+                  className="w-100"
                   onClick={() => {
                     setSearchTerm("");
                     setRoleFilter("");
                   }}>
-                  Clear
+                  Clear Filters
                 </Button>
               </Col>
             </Row>
@@ -253,7 +266,8 @@ const Users = () => {
                 <tr>
                   <th>User</th>
                   <th>Email</th>
-                  <th>Role</th>
+                  <th>Role & Level</th>
+                  <th>Assigned At</th>
                   <th>Submissions</th>
                   <th>Supervisor</th>
                   <th>Actions</th>
@@ -294,13 +308,29 @@ const Users = () => {
                       </div>
                     </td>
                     <td>{user.email}</td>
-                    <td>{getRoleBadge(user?.roles)}</td>
+                    <td>
+                      {user.role ? (
+                        <div className="d-flex align-items-center gap-2">
+                          {getRoleBadge(user.role)}
+                          {user.role === "resident" && user.level && (
+                            <LevelBadge level={user.level} size="sm" />
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
+                    </td>
+                    <td>
+                      <span className="text-muted">
+                        {new Date(user.assignedAt).toLocaleDateString()}
+                      </span>
+                    </td>
                     <td style={{ textAlign: "center" }}>
                       {user.totalSubmissions || 0}
                     </td>
                     <td>
                       <small>
-                        {user?.roles?.includes("resident") ? (
+                        {user.role === "resident" ? (
                           user?.supervisor?.username ? (
                             <Badge bg={"warning"}>
                               {user?.supervisor?.username}
@@ -328,6 +358,13 @@ const Users = () => {
                             <Eye size={16} className="me-2" />
                             View Details
                           </Dropdown.Item>
+                          {user.role === "resident" && (
+                            <Dropdown.Item
+                              onClick={() => handleManageLevels(user)}>
+                              <TrendingUp size={16} className="me-2" />
+                              Manage Levels
+                            </Dropdown.Item>
+                          )}
                           <Dropdown.Divider />
                           {/* {user.status === "active" ? (
                             <Dropdown.Item
@@ -405,6 +442,7 @@ const Users = () => {
                   </Form.Group>
                 </Col>
               </Row>
+
               <Row>
                 {formData.roles.includes("resident") && (
                   <Col md={6}>
@@ -554,6 +592,16 @@ const Users = () => {
             </Modal.Footer>
           </Form>
         </Modal>
+
+        {/* Manage Levels Modal */}
+        {selectedUserForLevels && (
+          <ManageLevelsModal
+            show={showLevelsModal}
+            onHide={handleCloseLevelsModal}
+            user={selectedUserForLevels}
+            institutionId={institutionId}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

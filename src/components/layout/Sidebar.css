@@ -23,6 +23,32 @@
   color: white;
 }
 
+.current-institution {
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  margin-top: 1rem;
+}
+
+.current-institution .institution-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: white;
+}
+
+.current-institution .btn-outline-secondary {
+  color: white;
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.current-institution .btn-outline-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.5);
+  color: white;
+}
+
 .sidebar-user {
   padding: 1.5rem;
   display: flex;

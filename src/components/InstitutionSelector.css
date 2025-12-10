@@ -1,0 +1,91 @@
+.institution-selector {
+  display: flex;
+  align-items: center;
+}
+
+.institution-dropdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: white;
+  color: #495057;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.institution-dropdown:hover {
+  background: #f8f9fa;
+  border-color: #0d6efd;
+  color: #0d6efd;
+}
+
+.institution-dropdown::after {
+  margin-left: 8px;
+}
+
+.institution-name {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.institution-dropdown-menu {
+  min-width: 280px;
+  max-height: 400px;
+  overflow-y: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.institution-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.institution-item:hover {
+  background: #f8f9fa;
+}
+
+.institution-item.active {
+  background: #e7f1ff;
+  color: #0d6efd;
+  font-weight: 600;
+}
+
+.institution-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.institution-item-name {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.institution-item-code {
+  font-size: 12px;
+  color: #6c757d;
+  font-weight: 400;
+}
+
+/* Responsive styles */
+@media (max-width: 768px) {
+  .institution-name {
+    display: none;
+  }
+
+  .institution-dropdown {
+    padding: 8px 12px;
+  }
+
+  .institution-dropdown-menu {
+    min-width: 240px;
+  }
+}

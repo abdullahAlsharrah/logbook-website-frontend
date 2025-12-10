@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Row,
@@ -22,12 +22,14 @@ import {
   Download,
   MoreVertical,
   FileText,
+  Building2,
 } from "lucide-react";
 import {
   useAllSubmissions,
   useUpdateSubmissionStatus,
   useForms,
 } from "../hooks/useForms";
+import { useInstitution } from "../context/InstitutionContext";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import "./Submissions.css";
 
@@ -39,8 +41,20 @@ const Submissions = () => {
   const [selectedSubmission] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
-  const { data: submissions, isLoading } = useAllSubmissions();
-  const { data: forms } = useForms();
+  // Institution context
+  const { selectedInstitution } = useInstitution();
+
+  // Build params with institutionId if selected
+  const queryParams = useMemo(() => {
+    const params = {};
+    if (selectedInstitution) {
+      params.institutionId = selectedInstitution;
+    }
+    return params;
+  }, [selectedInstitution]);
+
+  const { data: submissions, isLoading } = useAllSubmissions(queryParams);
+  const { data: forms } = useForms(queryParams);
   const updateStatusMutation = useUpdateSubmissionStatus();
 
   const handleViewForm = (submission) => {
@@ -314,8 +328,11 @@ const Submissions = () => {
               <thead>
                 <tr>
                   <th style={{ textAlign: "center", width: "20%" }}>User</th>
-                  <th style={{ textAlign: "center", width: "35%" }}>Form</th>
-                  <th style={{ textAlign: "center", width: "15%" }}>Status</th>
+                  <th style={{ textAlign: "center", width: "25%" }}>Form</th>
+                  <th style={{ textAlign: "center", width: "15%" }}>
+                    Institution
+                  </th>
+                  <th style={{ textAlign: "center", width: "10%" }}>Status</th>
                   <th style={{ textAlign: "center", width: "15%" }}>
                     Submitted
                   </th>
@@ -336,7 +353,7 @@ const Submissions = () => {
                           <div className="user-name">
                             {submission.resident?.username ||
                               "Unknown Resident"}{" "}
-                            • Resident
+                            {/* • Resident */}
                           </div>
                           <small className="text-muted">
                             {submission.tutor?.username || "Unknown Tutor"}
@@ -354,6 +371,19 @@ const Submissions = () => {
                           {submission.fieldRecord?.length || 0} fields completed
                         </small>
                       </div>
+                    </td>
+                    <td
+                      style={{ textAlign: "center", verticalAlign: "middle" }}>
+                      {submission.formTemplate?.institution ? (
+                        <Badge
+                          bg="info"
+                          className="d-inline-flex align-items-center gap-1">
+                          <Building2 size={12} />
+                          {submission.formTemplate.institution.name}
+                        </Badge>
+                      ) : (
+                        <span className="text-muted">-</span>
+                      )}
                     </td>
                     <td
                       style={{ textAlign: "center", verticalAlign: "middle" }}>
