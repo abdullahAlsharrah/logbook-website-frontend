@@ -17,6 +17,9 @@ import Announcements from "./pages/Announcements";
 import Institutions from "./pages/Institutions";
 import InstitutionForm from "./pages/InstitutionForm";
 import InstitutionDetail from "./pages/InstitutionDetail";
+import Privacy from "./components/Privacy";
+import PrivacyAr from "./components/PrivacyAr";
+import Support from "./components/support";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
@@ -51,6 +54,30 @@ const AppRoutes = () => {
           element={
             <PublicRoute>
               <Login />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/privacy"
+          element={
+            <PublicRoute>
+              <Privacy />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/privacy-ar"
+          element={
+            <PublicRoute>
+              <PrivacyAr />
+            </PublicRoute>
+          }
+        />
+        <Route
+          path="/support"
+          element={
+            <PublicRoute>
+              <Support />
             </PublicRoute>
           }
         />
