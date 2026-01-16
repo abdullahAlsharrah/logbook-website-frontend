@@ -6,7 +6,6 @@ import {
   User,
   FileText,
   Megaphone,
-  BarChart3,
   Settings,
   Menu,
   Building2,
