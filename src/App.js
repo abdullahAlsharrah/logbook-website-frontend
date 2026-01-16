@@ -20,6 +20,7 @@ import InstitutionDetail from "./pages/InstitutionDetail";
 import Privacy from "./components/Privacy";
 import PrivacyAr from "./components/PrivacyAr";
 import Support from "./components/support";
+import PublicLayout from "./components/PublicLayout";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "./App.css";
 
@@ -38,9 +39,9 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// Public Route Component
+// Public Route Component - No authentication required
 const PublicRoute = ({ children }) => {
-  return children;
+  return <>{children}</>;
 };
 
 // App Routes Component
@@ -48,7 +49,7 @@ const AppRoutes = () => {
   return (
     <div className="App">
       <Routes>
-        {/* Public Routes */}
+        {/* Public Routes - Accessible without authentication */}
         <Route
           path="/login"
           element={
@@ -61,7 +62,9 @@ const AppRoutes = () => {
           path="/privacy"
           element={
             <PublicRoute>
-              <Privacy />
+              <PublicLayout>
+                <Privacy />
+              </PublicLayout>
             </PublicRoute>
           }
         />
@@ -69,7 +72,9 @@ const AppRoutes = () => {
           path="/privacy-ar"
           element={
             <PublicRoute>
-              <PrivacyAr />
+              <PublicLayout>
+                <PrivacyAr />
+              </PublicLayout>
             </PublicRoute>
           }
         />
@@ -77,7 +82,9 @@ const AppRoutes = () => {
           path="/support"
           element={
             <PublicRoute>
-              <Support />
+              <PublicLayout>
+                <Support />
+              </PublicLayout>
             </PublicRoute>
           }
         />
@@ -218,14 +225,15 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Default redirect */}
+        {/* Default redirect - but exclude public routes */}
         <Route
           path="/"
           element={<Navigate to="/select-institution" replace />}
         />
+        {/* Catch-all route - redirect to login for unknown routes, but preserve public routes */}
         <Route
           path="*"
-          element={<Navigate to="/select-institution" replace />}
+          element={<Navigate to="/login" replace />}
         />
       </Routes>
     </div>
@@ -245,5 +253,8 @@ function App() {
     </QueryClientProvider>
   );
 }
+
+// Export for potential server-side routing configuration
+export { AppRoutes };
 
 export default App;
