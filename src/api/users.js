@@ -1,8 +1,14 @@
 import api from "./axios";
 
 // Get all users with pagination and filters
-export const getUsers = async (params = {}) => {
-  const { data } = await api.get("/users", { params });
+// institutionId is REQUIRED
+export const getUsers = async (institutionId, params = {}) => {
+  if (!institutionId) {
+    throw new Error("institutionId is required");
+  }
+  const { data } = await api.get("/users", {
+    params: { ...params, institutionId },
+  });
   return data;
 };
 
@@ -79,8 +85,14 @@ export const updateUserStatus = async (userId, status) => {
 };
 
 // Get tutor list for supervisor selection
-export const getTutorList = async () => {
-  const { data } = await api.get("/users/tutor-list");
+// institutionId is REQUIRED
+export const getTutorList = async (institutionId) => {
+  if (!institutionId) {
+    throw new Error("institutionId is required");
+  }
+  const { data } = await api.get("/users/tutor-list", {
+    params: { institutionId },
+  });
   return data;
 };
 
@@ -93,4 +105,10 @@ export const getUser = async () => {
     console.error("Error getting user:", error);
     return null;
   }
+};
+
+// Update user level in an institution
+export const updateUserLevel = async (userId, levelData) => {
+  const { data } = await api.patch(`/users/${userId}/level`, levelData);
+  return data;
 };

@@ -21,6 +21,8 @@ import {
   EyeOff,
   Camera,
   Save,
+  TrendingUp,
+  Building2,
 } from "lucide-react";
 import {
   useUser,
@@ -29,22 +31,26 @@ import {
   useTutorList,
 } from "../hooks/useUsers";
 import DashboardLayout from "../components/layout/DashboardLayout";
+import ManageLevelsModal from "../components/ManageLevelsModal";
+import LevelBadge from "../components/LevelBadge";
 import "./UserDetail.css";
 import { BASE_URL } from "../api/constants";
 import { useAuth } from "../context/AuthContext";
 
 const UserDetail = () => {
-  const { userId } = useParams();
+  const { userId, institutionId } = useParams();
   const navigate = useNavigate();
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showimageModal, setShowimageModal] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showLevelsModal, setShowLevelsModal] = useState(false);
 
   const { data: user, isLoading } = useUser(userId);
   const { data: userSubmissions, isLoading: submissionsLoading } =
     useUserSubmissions(userId, user?.roles);
-  const { data: tutorList, isLoading: tutorListLoading } = useTutorList();
+  const { data: tutorList, isLoading: tutorListLoading } =
+    useTutorList(institutionId);
   const updateUserMutation = useUpdateUser();
   const { refreshUser } = useAuth();
 
@@ -67,7 +73,15 @@ const UserDetail = () => {
   const availableRoles = ["admin", "tutor", "resident", "moderator"];
 
   const handleBack = () => {
-    navigate("/users");
+    navigate(`/institution/${institutionId}/users`);
+  };
+
+  const handleManageLevels = () => {
+    setShowLevelsModal(true);
+  };
+
+  const handleCloseLevelsModal = () => {
+    setShowLevelsModal(false);
   };
 
   const handleEditUser = () => {
@@ -252,11 +266,19 @@ const UserDetail = () => {
                 <p className="user-email">{user.email}</p>
                 <div className="user-status">{getStatusBadge(user.status)}</div>
                 <div className="user-roles mt-2">
-                  {user.roles?.map((role) => (
-                    <Badge key={role} bg="secondary" className="me-1">
-                      {role}
+                  {user.institutionRoles && user.institutionRoles.length > 0 ? (
+                    [
+                      ...new Set(user.institutionRoles.map((ir) => ir.role)),
+                    ].map((role) => (
+                      <Badge key={role} bg="secondary" className="me-1">
+                        {role}
+                      </Badge>
+                    ))
+                  ) : (
+                    <Badge bg="secondary" className="me-1">
+                      No roles assigned
                     </Badge>
-                  ))}
+                  )}
                 </div>
                 {user.supervisor && user.supervisor.username && (
                   <div className="supervisor-info mt-3">
@@ -275,6 +297,17 @@ const UserDetail = () => {
                     <Shield size={14} className="me-1" />
                     Change Password
                   </Button>
+                  {user.institutionRoles?.some(
+                    (ir) => ir.role === "resident"
+                  ) && (
+                    <Button
+                      variant="outline-success"
+                      size="sm"
+                      onClick={handleManageLevels}>
+                      <TrendingUp size={14} className="me-1" />
+                      Manage Levels
+                    </Button>
+                  )}
                 </div>
               </Card.Body>
             </Card>
@@ -313,6 +346,44 @@ const UserDetail = () => {
                 </div>
               </Card.Body>
             </Card>
+
+            {/* Institutions and Levels */}
+            {user.institutionRoles && user.institutionRoles.length > 0 && (
+              <Card className="mt-4">
+                <Card.Header>
+                  <h6 className="mb-0">Institutions & Roles</h6>
+                </Card.Header>
+                <Card.Body>
+                  {user.institutionRoles.map((ir, index) => (
+                    <div
+                      key={ir.institution._id}
+                      className={`d-flex justify-content-between align-items-center mb-3 ${
+                        index !== user.institutionRoles.length - 1
+                          ? "pb-3 border-bottom"
+                          : ""
+                      }`}>
+                      <div className="d-flex align-items-center gap-2">
+                        <Building2 size={18} className="text-primary" />
+                        <div>
+                          <div className="fw-semibold">
+                            {ir.institution.name}
+                          </div>
+                          <small className="text-muted">
+                            {ir.institution.code}
+                            <Badge bg="secondary" className="ms-2">
+                              {ir.role}
+                            </Badge>
+                          </small>
+                        </div>
+                      </div>
+                      {ir.role === "resident" && (
+                        <LevelBadge level={ir.level} />
+                      )}
+                    </div>
+                  ))}
+                </Card.Body>
+              </Card>
+            )}
           </Col>
 
           {/* User Submissions */}
@@ -793,6 +864,16 @@ const UserDetail = () => {
             </Button>
           </Modal.Footer>
         </Modal>
+
+        {/* Manage Levels Modal */}
+        {user && (
+          <ManageLevelsModal
+            show={showLevelsModal}
+            onHide={handleCloseLevelsModal}
+            user={user}
+            institutionId={institutionId}
+          />
+        )}
       </div>
     </DashboardLayout>
   );

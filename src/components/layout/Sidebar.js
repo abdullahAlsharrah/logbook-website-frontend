@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { Nav, Offcanvas } from "react-bootstrap";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Nav, Offcanvas, Button } from "react-bootstrap";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   House,
   User,
@@ -9,15 +9,21 @@ import {
   BarChart3,
   Settings,
   Menu,
+  Building2,
+  ArrowLeft,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { useInstitution } from "../../context/InstitutionContext";
 import "./Sidebar.css";
 import { BASE_URL } from "../../api/constants";
+
 const Sidebar = () => {
   const [show, setShow] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
+  const { institutionId } = useParams();
   const { logout, user, loading } = useAuth();
+  const { institutions } = useInstitution();
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
@@ -34,14 +40,42 @@ const Sidebar = () => {
     return <div>Loading...</div>;
   }
 
+  const currentInstitution = institutions?.find(
+    (inst) => inst._id === institutionId
+  );
+
+  const handleChangeInstitution = () => {
+    localStorage.removeItem("selectedInstitution");
+    navigate("/select-institution");
+  };
+
   const menuItems = [
-    { path: "/dashboard", icon: House, label: "Dashboard" },
-    { path: "/users", icon: User, label: "Users" },
-    { path: "/forms", icon: FileText, label: "Forms" },
-    { path: "/submissions", icon: FileText, label: "Submissions" },
-    { path: "/announcements", icon: Megaphone, label: "Announcements" },
-    { path: "/analytics", icon: BarChart3, label: "Analytics" },
-    { path: "/settings", icon: Settings, label: "Settings" },
+    {
+      path: `/institution/${institutionId}/dashboard`,
+      icon: House,
+      label: "Dashboard",
+    },
+    { path: `/institution/${institutionId}/users`, icon: User, label: "Users" },
+    {
+      path: `/institution/${institutionId}/forms`,
+      icon: FileText,
+      label: "Forms",
+    },
+    {
+      path: `/institution/${institutionId}/submissions`,
+      icon: FileText,
+      label: "Submissions",
+    },
+    {
+      path: `/institution/${institutionId}/announcements`,
+      icon: Megaphone,
+      label: "Announcements",
+    },
+    {
+      path: `/institution/${institutionId}/settings`,
+      icon: Settings,
+      label: "Settings",
+    },
   ];
 
   const isActive = (path) => {
@@ -76,7 +110,27 @@ const Sidebar = () => {
       {/* Desktop Sidebar */}
       <div className="sidebar d-none d-lg-block">
         <div className="sidebar-header">
-          <h4>Admin Dashboard</h4>
+          <div className="d-flex align-items-center justify-content-between mb-3">
+            <h4 className="mb-0">Admin Dashboard</h4>
+          </div>
+          {currentInstitution && (
+            <div className="current-institution">
+              <div className="d-flex align-items-center gap-2 mb-2">
+                <Building2 size={18} className="text-primary" />
+                <span className="institution-name">
+                  {currentInstitution.name}
+                </span>
+              </div>
+              <Button
+                variant="outline-secondary"
+                size="sm"
+                className="w-100"
+                onClick={handleChangeInstitution}>
+                <ArrowLeft size={16} className="me-2" />
+                Change Institution
+              </Button>
+            </div>
+          )}
         </div>
 
         <div className="sidebar-user">
@@ -134,9 +188,35 @@ const Sidebar = () => {
         placement="start"
         className="sidebar-offcanvas">
         <Offcanvas.Header closeButton>
-          <Offcanvas.Title>Admin Dashboard</Offcanvas.Title>
+          <Offcanvas.Title>
+            <div>
+              Admin Dashboard
+              {currentInstitution && (
+                <div className="mt-2 d-flex align-items-center gap-2">
+                  <Building2 size={16} className="text-primary" />
+                  <small className="text-muted">
+                    {currentInstitution.name}
+                  </small>
+                </div>
+              )}
+            </div>
+          </Offcanvas.Title>
         </Offcanvas.Header>
         <Offcanvas.Body>
+          {currentInstitution && (
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="w-100 mb-3"
+              onClick={() => {
+                handleChangeInstitution();
+                handleClose();
+              }}>
+              <ArrowLeft size={16} className="me-2" />
+              Change Institution
+            </Button>
+          )}
+
           <div className="sidebar-user mb-3">
             <div
               className="user-avatar"
