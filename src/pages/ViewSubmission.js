@@ -1,8 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { Row, Col, Button, Badge } from "react-bootstrap";
-import { ArrowLeft, Download, Printer } from "lucide-react";
-import { useSubmission, useForm } from "../hooks/useForms";
+import {
+  Row,
+  Col,
+  Button,
+  Badge,
+  Form,
+  Modal,
+  Alert,
+} from "react-bootstrap";
+import { ArrowLeft, Download, Printer, CheckCircle } from "lucide-react";
+import { useSubmission, useForm, useReviewSubmission } from "../hooks/useForms";
+import { useAuth } from "../context/AuthContext";
+import { useAssessmentOptions } from "../hooks/useConstants";
 import DashboardLayout from "../components/layout/DashboardLayout";
 import "./ViewSubmission.css";
 
@@ -10,13 +20,17 @@ const ViewSubmission = () => {
   const { submissionId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const [showAssessmentModal, setShowAssessmentModal] = useState(false);
+  const [assessment, setAssessment] = useState("");
+  const [assessmentComments, setAssessmentComments] = useState("");
 
   // Check if we're in PDF mode
   const isPDFView = location.pathname.includes("/pdf/");
   const submission = location.state?.submission;
 
   // Use submission data from state or fetch from API
-  const { data: submissionData, isLoading: submissionLoading } = useSubmission(
+  const { data: submissionData, isLoading: submissionLoading, refetch: refetchSubmission } = useSubmission(
     submission?._id || submissionId
   );
 
@@ -27,7 +41,71 @@ const ViewSubmission = () => {
     finalSubmission?.formTemplate?._id
   );
 
+  const reviewMutation = useReviewSubmission();
+
   const isLoading = submissionLoading || formLoading;
+
+  // Fetch assessment options from backend
+  const { data: assessmentOptions = [] } = useAssessmentOptions();
+
+  // Check if current user is a tutor and is the assigned tutor
+  const isTutor = user?.roles?.some((role) => role.toLowerCase() === "tutor");
+  const isResident = user?.roles?.some((role) => role.toLowerCase() === "resident");
+  const isAssignedTutor =
+    finalSubmission?.tutor?._id === user?._id ||
+    finalSubmission?.tutor === user?._id;
+  const canAssess = isTutor && isAssignedTutor && !isPDFView;
+  const isReadOnly = isResident || isPDFView; // Residents can only view, not edit
+
+  // Initialize assessment state when submission loads
+  React.useEffect(() => {
+    if (finalSubmission?.assessment) {
+      setAssessment(finalSubmission.assessment);
+      setAssessmentComments(finalSubmission.assessmentComments || "");
+    }
+  }, [finalSubmission]);
+
+  const handleOpenAssessmentModal = () => {
+    // Safety check: prevent residents from opening assessment modal
+    if (isReadOnly || !canAssess) {
+      return;
+    }
+    setAssessment(finalSubmission?.assessment || "");
+    setAssessmentComments(finalSubmission?.assessmentComments || "");
+    setShowAssessmentModal(true);
+  };
+
+  const handleCloseAssessmentModal = () => {
+    setShowAssessmentModal(false);
+    setAssessment(finalSubmission?.assessment || "");
+    setAssessmentComments(finalSubmission?.assessmentComments || "");
+  };
+
+  const handleSubmitAssessment = async () => {
+    // Safety check: prevent residents from submitting assessment
+    if (isReadOnly || !canAssess) {
+      alert("You do not have permission to submit assessments.");
+      return;
+    }
+
+    if (!assessment) {
+      alert("Please select an assessment");
+      return;
+    }
+
+    try {
+      await reviewMutation.mutateAsync({
+        submissionId: finalSubmission._id,
+        assessment,
+        assessmentComments: assessmentComments.trim() || null,
+      });
+      setShowAssessmentModal(false);
+      refetchSubmission();
+    } catch (error) {
+      console.error("Error submitting assessment:", error);
+      alert("Failed to submit assessment. Please try again.");
+    }
+  };
 
   const handleBack = () => {
     navigate("/submissions");
@@ -106,6 +184,18 @@ const ViewSubmission = () => {
             <Button variant="outline-secondary" onClick={handleBack}>
               Back
             </Button>
+            {canAssess && (
+              <Button
+                variant="primary"
+                onClick={handleOpenAssessmentModal}
+                className="me-2"
+              >
+                <CheckCircle size={16} className="me-2" />
+                {finalSubmission?.assessment
+                  ? "Update Assessment"
+                  : "Submit Assessment"}
+              </Button>
+            )}
             {isPDFView && (
               <>
                 <Button variant="outline-primary" onClick={handlePrint}>
@@ -121,6 +211,56 @@ const ViewSubmission = () => {
           </div>
         </div>
 
+        {/* Assessment Section */}
+        {finalSubmission?.assessment && (
+          <div className="assessment-section mb-4">
+            <Alert
+              variant={
+                finalSubmission.assessment === "Satisfactory"
+                  ? "success"
+                  : finalSubmission.assessment === "Needs Improvement"
+                  ? "warning"
+                  : "danger"
+              }
+            >
+              <Row>
+                <Col md={6}>
+                  <strong>Assessment:</strong>{" "}
+                  <Badge
+                    bg={
+                      finalSubmission.assessment === "Satisfactory"
+                        ? "success"
+                        : finalSubmission.assessment === "Needs Improvement"
+                        ? "warning"
+                        : "danger"
+                    }
+                  >
+                    {finalSubmission.assessment}
+                  </Badge>
+                </Col>
+                {finalSubmission.assessedAt && (
+                  <Col md={6}>
+                    <strong>Assessed on:</strong>{" "}
+                    {new Date(finalSubmission.assessedAt).toLocaleDateString()}
+                    {finalSubmission.assessedBy && (
+                      <span className="ms-2">
+                        by {finalSubmission.assessedBy?.name ||
+                          finalSubmission.assessedBy?.username}
+                      </span>
+                    )}
+                  </Col>
+                )}
+              </Row>
+              {finalSubmission.assessmentComments && (
+                <div className="mt-2">
+                  <strong>Comments:</strong>
+                  <p className="mb-0">{finalSubmission.assessmentComments}</p>
+                </div>
+              )}
+            </Alert>
+          </div>
+        )}
+
         {/* Form Preview */}
         <div className="form-preview-container">
           <SubmissionLayout
@@ -130,6 +270,71 @@ const ViewSubmission = () => {
             getResponseLabel={getResponseLabel}
           />
         </div>
+
+        {/* Assessment Modal */}
+        <Modal
+          show={showAssessmentModal}
+          onHide={handleCloseAssessmentModal}
+          size="lg"
+        >
+          <Modal.Header closeButton>
+            <Modal.Title>Submit Assessment</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>
+                  <strong>Assessment *</strong>
+                </Form.Label>
+                <Form.Select
+                  value={assessment}
+                  onChange={(e) => setAssessment(e.target.value)}
+                  required
+                  disabled={isReadOnly}
+                >
+                  <option value="">Select assessment...</option>
+                  {assessmentOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Form.Select>
+                <Form.Text className="text-muted">
+                  Select the appropriate assessment for this submission
+                </Form.Text>
+              </Form.Group>
+
+              <Form.Group className="mb-3">
+                <Form.Label>
+                  <strong>Comments (Optional)</strong>
+                </Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={4}
+                  value={assessmentComments}
+                  onChange={(e) => setAssessmentComments(e.target.value)}
+                  placeholder="Add any comments or feedback for the resident..."
+                  disabled={isReadOnly}
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={handleCloseAssessmentModal}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSubmitAssessment}
+              disabled={!assessment || reviewMutation.isPending}
+            >
+              {reviewMutation.isPending ? "Submitting..." : "Submit Assessment"}
+            </Button>
+          </Modal.Footer>
+        </Modal>
       </div>
     </DashboardLayout>
   );

@@ -132,3 +132,17 @@ export const getSubmissionsByUserId = async (
     throw error;
   }
 };
+
+// Review form submission with assessment
+export const reviewSubmission = async (submissionId, reviewData) => {
+  try {
+    const { data } = await api.put(
+      `/formSubmitions/${submissionId}/review`,
+      reviewData
+    );
+    return data;
+  } catch (error) {
+    console.error("Error reviewing submission:", error);
+    throw error;
+  }
+};
