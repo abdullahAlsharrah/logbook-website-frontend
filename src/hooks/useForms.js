@@ -99,3 +99,21 @@ export const useUpdateSubmissionStatus = () => {
     },
   });
 };
+
+export const useReviewSubmission = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ submissionId, assessment, assessmentComments, fieldRecords }) =>
+      formApi.reviewSubmission(submissionId, {
+        assessment,
+        assessmentComments,
+        fieldRecords: fieldRecords || [],
+      }),
+    onSuccess: (data, { submissionId }) => {
+      queryClient.invalidateQueries({ queryKey: ["submission", submissionId] });
+      queryClient.invalidateQueries({ queryKey: ["allSubmissions"] });
+      queryClient.invalidateQueries({ queryKey: ["formSubmissions"] });
+    },
+  });
+};

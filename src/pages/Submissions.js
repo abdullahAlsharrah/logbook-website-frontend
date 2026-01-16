@@ -390,6 +390,21 @@ const Submissions = () => {
                       <div className="status-cell">
                         {getStatusIcon(submission.status)}
                         {getStatusBadge(submission.status)}
+                        {submission.assessment && (
+                          <div className="mt-1">
+                            <Badge
+                              bg={
+                                submission.assessment === "Satisfactory"
+                                  ? "success"
+                                  : submission.assessment === "Needs Improvement"
+                                  ? "warning"
+                                  : "danger"
+                              }
+                              className="assessment-badge">
+                              {submission.assessment}
+                            </Badge>
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td

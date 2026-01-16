@@ -231,10 +231,7 @@ const AppRoutes = () => {
           element={<Navigate to="/select-institution" replace />}
         />
         {/* Catch-all route - redirect to login for unknown routes, but preserve public routes */}
-        <Route
-          path="*"
-          element={<Navigate to="/login" replace />}
-        />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </div>
   );
